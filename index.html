@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧠 Performance Review Quest — Діма</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Satoshi:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#05060a;--bg2:#0a0c14;--card:#0e1019;--card2:#14172280;
+  --brd:#161b2e;--brd2:#1e2540;--brd-hi:#2a3560;
+  --accent:#4d8eff;--accent-g:rgba(77,142,255,.1);--accent-g2:rgba(77,142,255,.04);
+  --green:#00e2a0;--green-g:rgba(0,226,160,.08);--green-d:#00b880;
+  --red:#ff5c5c;--red-g:rgba(255,92,92,.08);
+  --gold:#ffc940;--gold-g:rgba(255,201,64,.1);
+  --cyan:#00d4ff;--cyan-g:rgba(0,212,255,.08);
+  --txt:#b8c4de;--txt2:#4a5578;--txt3:#e8edf8;--white:#f8faff;
+}
+body{font-family:'Satoshi',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+
+/* Scanline overlay */
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:999}
+
+/* Grid bg */
+.gridbg{position:fixed;inset:0;background:
+  linear-gradient(rgba(77,142,255,.02) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(77,142,255,.02) 1px,transparent 1px);
+  background-size:60px 60px;pointer-events:none;z-index:0}
+
+/* Ambient blobs */
+.blob{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0}
+.blob-1{width:600px;height:600px;background:rgba(77,142,255,.06);top:-200px;left:-100px;animation:blobFloat 20s ease-in-out infinite}
+.blob-2{width:500px;height:500px;background:rgba(0,226,160,.04);bottom:-150px;right:-150px;animation:blobFloat 25s ease-in-out infinite reverse}
+.blob-3{width:300px;height:300px;background:rgba(255,201,64,.03);top:40%;left:60%;animation:blobFloat 15s ease-in-out infinite}
+@keyframes blobFloat{0%,100%{transform:translate(0,0)}33%{transform:translate(30px,-40px)}66%{transform:translate(-20px,30px)}}
+
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px 16px 80px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* =================== WELCOME =================== */
+.welcome{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.welcome .terminal-block{background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:28px 32px;max-width:560px;width:100%;text-align:left;margin-bottom:28px;position:relative;overflow:hidden;animation:fadeUp .6s ease .2s both}
+.welcome .terminal-block::before{content:'';position:absolute;top:0;left:0;right:0;height:36px;background:var(--bg2);border-bottom:1px solid var(--brd);border-radius:14px 14px 0 0}
+.welcome .terminal-dots{position:absolute;top:12px;left:14px;display:flex;gap:6px;z-index:2}
+.welcome .terminal-dots span{width:10px;height:10px;border-radius:50%}
+.welcome .terminal-dots span:nth-child(1){background:#ff5f57}
+.welcome .terminal-dots span:nth-child(2){background:#febc2e}
+.welcome .terminal-dots span:nth-child(3){background:#28c840}
+.welcome .terminal-title{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--txt2);z-index:2}
+.welcome .terminal-body{margin-top:28px;font-family:'IBM Plex Mono',monospace;font-size:.82rem;line-height:2}
+.t-prompt{color:var(--green)}
+.t-cmd{color:var(--txt3)}
+.t-out{color:var(--txt2)}
+.t-highlight{color:var(--gold)}
+.t-accent{color:var(--accent)}
+.t-cursor{display:inline-block;width:8px;height:16px;background:var(--green);margin-left:2px;animation:blink 1s step-end infinite;vertical-align:middle}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.welcome h1{font-weight:900;font-size:clamp(2rem,5.5vw,3.2rem);letter-spacing:-2px;line-height:1.1;color:var(--white);margin-bottom:10px;animation:fadeUp .6s ease .4s both}
+.welcome h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.w-sub{color:var(--txt2);font-size:.95rem;margin-bottom:28px;animation:fadeUp .6s ease .5s both}
+.w-btn{font-family:'IBM Plex Mono',monospace;font-size:.85rem;font-weight:600;background:transparent;color:var(--green);border:1.5px solid var(--green);padding:14px 36px;border-radius:10px;cursor:pointer;transition:.3s;animation:fadeUp .6s ease .6s both;position:relative;overflow:hidden}
+.w-btn::before{content:'';position:absolute;inset:0;background:var(--green);opacity:0;transition:.3s}
+.w-btn:hover::before{opacity:.1}
+.w-btn:hover{box-shadow:0 0 30px rgba(0,226,160,.15);transform:translateY(-2px)}
+
+/* =================== GAME =================== */
+.g-top{margin-bottom:24px;animation:fadeUp .5s ease}
+
+/* Progress bar */
+.review-progress{background:var(--card);border:1px solid var(--brd);border-radius:12px;padding:16px 20px;margin-bottom:20px}
+.rp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.rp-title{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--txt2);text-transform:uppercase;letter-spacing:2px}
+.rp-count{font-family:'IBM Plex Mono',monospace;font-size:.85rem;font-weight:700;color:var(--green)}
+.rp-bar{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;position:relative}
+.rp-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:99px;transition:width .8s cubic-bezier(.34,1.56,.64,1);position:relative}
+.rp-fill::after{content:'';position:absolute;right:0;top:-2px;width:10px;height:10px;background:var(--green);border-radius:50%;box-shadow:0 0 12px var(--green);transition:opacity .3s}
+.rp-labels{display:flex;justify-content:space-between;margin-top:8px}
+.rp-labels span{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--txt2)}
+
+/* Secret bar */
+.s-bar{background:var(--card);border:1px solid var(--brd);border-radius:12px;padding:16px 20px;margin-bottom:22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.s-lbl{font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--txt2);text-transform:uppercase;letter-spacing:2px;white-space:nowrap}
+.s-letters{display:flex;gap:6px}
+.s-let{width:42px;height:50px;background:var(--bg2);border:2px solid var(--brd);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--txt2);transition:.5s cubic-bezier(.34,1.56,.64,1)}
+.s-let.on{border-color:var(--gold);background:var(--gold-g);color:var(--gold);box-shadow:0 0 20px var(--gold-g),0 0 40px rgba(255,201,64,.05);animation:pop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(.4) rotateY(90deg)}60%{transform:scale(1.15) rotateY(0)}100%{transform:scale(1)}}
+
+/* Layout */
+.g-layout{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start}
+@media(max-width:860px){.g-layout{grid-template-columns:1fr}}
+
+/* =================== CROSSWORD =================== */
+.cw-panel{background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:20px;position:sticky;top:16px}
+.cw-title{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--txt2);text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.cw-title::before{content:'';width:8px;height:8px;background:var(--accent);border-radius:2px;animation:dotPulse 2s ease-in-out infinite}
+@keyframes dotPulse{0%,100%{opacity:.4}50%{opacity:1}}
+.cw-grid{display:grid;gap:3px;justify-content:center}
+.c{width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:1rem;font-weight:700;border-radius:5px;position:relative;text-transform:uppercase;transition:.3s}
+.c.e{background:transparent}
+.c.a{background:var(--bg2);border:1.5px solid var(--brd)}
+.c.a.hl{border-color:var(--accent);box-shadow:0 0 14px var(--accent-g);background:rgba(77,142,255,.04)}
+.c.filled{background:rgba(0,226,160,.06);border-color:rgba(0,226,160,.3);color:var(--green)}
+.c.gld{border-color:rgba(255,201,64,.4)!important;box-shadow:0 0 14px var(--gold-g)}
+.c.gld.filled{color:var(--gold)!important;background:var(--gold-g)!important;border-color:var(--gold)!important;box-shadow:0 0 20px var(--gold-g),0 0 40px rgba(255,201,64,.05)!important}
+.c .cn{position:absolute;top:2px;left:4px;font-size:.5rem;font-weight:600;color:var(--txt2);pointer-events:none;z-index:2}
+.c .letter{opacity:0;transform:scale(0);transition:all .45s cubic-bezier(.34,1.56,.64,1)}
+.c.filled .letter{opacity:1;transform:scale(1)}
+
+/* =================== TASKS =================== */
+.t-panel{display:flex;flex-direction:column;gap:8px}
+.t-card{background:var(--card);border:1px solid var(--brd);border-radius:11px;transition:.3s;cursor:pointer;user-select:none;position:relative;overflow:hidden}
+.t-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);opacity:0;transition:.3s;border-radius:0 3px 3px 0}
+.t-card:hover{border-color:var(--brd2);transform:translateX(4px)}
+.t-card:hover::before{opacity:1}
+.t-card.done{border-color:rgba(0,226,160,.2)}
+.t-card.done::before{background:var(--green);opacity:1}
+.t-card.done:hover{transform:none;cursor:default}
+.t-card.locked{opacity:.35;cursor:not-allowed}
+.t-card.locked:hover{transform:none;border-color:var(--brd)}
+.t-card.locked::before{opacity:0}
+.t-hdr{display:flex;align-items:center;gap:10px;padding:13px 16px}
+.t-n{font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:700;color:var(--bg);background:var(--accent);min-width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.3s}
+.t-card.done .t-n{background:var(--green)}
+.t-card.locked .t-n{background:var(--txt2)}
+.t-nm{font-weight:600;font-size:.88rem;color:var(--txt3);flex:1}
+.t-meta{display:flex;align-items:center;gap:8px}
+.t-dir{font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--txt2);background:var(--bg2);padding:3px 8px;border-radius:4px;letter-spacing:1px}
+.t-st{font-size:.9rem}
+.t-rw-mini{font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:700;color:var(--green);letter-spacing:2px}
+
+/* Doodle card */
+.doodle-card{background:linear-gradient(135deg,rgba(77,142,255,.04),rgba(0,226,160,.04));border:1px solid rgba(77,142,255,.15);border-radius:11px;cursor:pointer;transition:.3s;position:relative;overflow:hidden}
+.doodle-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--accent),var(--green));opacity:.6;border-radius:0 3px 3px 0}
+.doodle-card:hover{border-color:var(--accent);transform:translateX(4px)}
+.doodle-card.played{border-color:rgba(0,226,160,.2);cursor:default}
+.doodle-card.played:hover{transform:none}
+.doodle-card.played::before{background:var(--green);opacity:1}
+.doodle-card.locked{opacity:.35;cursor:not-allowed}
+.doodle-card.locked:hover{transform:none}
+.doodle-card .t-n{background:linear-gradient(135deg,var(--accent),var(--green))}
+
+/* =================== MODAL =================== */
+.modal-overlay{position:fixed;inset:0;background:rgba(3,4,8,.9);backdrop-filter:blur(12px);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}
+.modal{background:var(--card);border:1px solid var(--brd2);border-radius:16px;max-width:580px;width:100%;max-height:90vh;overflow-y:auto;position:relative;animation:modalSlide .35s cubic-bezier(.34,1.2,.64,1)}
+@keyframes modalSlide{from{opacity:0;transform:translateY(30px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--green),var(--gold));border-radius:16px 16px 0 0}
+.modal-top{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 0}
+.modal-badge{display:flex;align-items:center;gap:10px}
+.modal-badge .m-num{font-family:'IBM Plex Mono',monospace;font-size:.68rem;font-weight:700;color:var(--bg);background:var(--accent);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.modal-badge .m-title{font-weight:700;font-size:1.02rem;color:var(--txt3)}
+.modal-close{background:var(--bg2);border:1px solid var(--brd);width:32px;height:32px;border-radius:8px;color:var(--txt2);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.modal-close:hover{border-color:var(--red);color:var(--red);background:var(--red-g)}
+.modal-body{padding:20px 24px 24px}
+.m-q{color:var(--txt);font-size:.9rem;line-height:1.65;margin-bottom:14px}
+.m-code{background:var(--bg);border:1px solid var(--brd);border-radius:10px;padding:16px 18px;font-family:'IBM Plex Mono',monospace;font-size:.76rem;line-height:1.85;overflow-x:auto;margin-bottom:16px;white-space:pre;color:var(--txt);position:relative}
+.m-code::before{content:'code';position:absolute;top:6px;right:10px;font-size:.55rem;color:var(--txt2);text-transform:uppercase;letter-spacing:1px}
+.kw{color:#ff6b6b}.str{color:#7ec8e3}.fn{color:#b8a0d6}.cm{color:#3d4663;font-style:italic}.num{color:#6dd6e7}.bi{color:#e8a87c}
+.m-ans-row{display:flex;gap:8px}
+.m-inp{flex:1;background:var(--bg);border:1.5px solid var(--brd);border-radius:9px;padding:12px 16px;color:var(--txt3);font-family:'IBM Plex Mono',monospace;font-size:.88rem;outline:none;transition:.3s}
+.m-inp:focus{border-color:var(--accent);box-shadow:0 0 16px var(--accent-g)}
+.m-inp::placeholder{color:var(--txt2)}
+.m-sub{background:var(--accent);border:none;border-radius:9px;padding:12px 22px;color:#fff;font-family:'Satoshi',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;transition:.3s;white-space:nowrap}
+.m-sub:hover{box-shadow:0 0 20px rgba(77,142,255,.3)}
+.m-fb{margin-top:12px;padding:12px 16px;border-radius:9px;font-size:.85rem;font-weight:600;animation:fadeUp .3s ease}
+.m-fb.ok{background:var(--green-g);border:1px solid rgba(0,226,160,.2);color:var(--green)}
+.m-fb.no{background:var(--red-g);border:1px solid rgba(255,92,92,.2);color:var(--red)}
+.m-hint-btn{background:none;border:none;color:var(--txt2);font-family:'IBM Plex Mono',monospace;font-size:.7rem;cursor:pointer;padding:6px 0;margin-top:10px;transition:.3s}
+.m-hint-btn:hover{color:var(--gold)}
+.m-hint{margin-top:8px;padding:11px 14px;background:rgba(255,201,64,.04);border:1px solid rgba(255,201,64,.1);border-radius:8px;color:var(--gold);font-size:.8rem;line-height:1.55;font-family:'IBM Plex Mono',monospace}
+.m-success{margin-top:16px;padding:22px;background:linear-gradient(135deg,rgba(0,226,160,.06),rgba(77,142,255,.04));border:1px solid rgba(0,226,160,.15);border-radius:12px;text-align:center;animation:fadeUp .4s ease}
+.m-success .ms-icon{font-size:2.2rem;margin-bottom:8px}
+.m-success .ms-text{font-size:.95rem;color:var(--green);font-weight:700;margin-bottom:4px}
+.m-success .ms-sub{font-size:.78rem;color:var(--txt2)}
+.m-close-btn{margin-top:16px;width:100%;background:transparent;border:1.5px solid var(--green);border-radius:10px;padding:13px;color:var(--green);font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:.85rem;cursor:pointer;transition:.3s}
+.m-close-btn:hover{background:var(--green-g);box-shadow:0 0 20px rgba(0,226,160,.1)}
+
+/* =================== DOODLE JUMP =================== */
+.doodle-modal{max-width:420px}
+.doodle-wrap{background:var(--bg);border:1px solid var(--brd);border-radius:12px;overflow:hidden;margin-bottom:16px;position:relative;display:flex;justify-content:center}
+.doodle-wrap canvas{display:block}
+.doodle-sc{position:absolute;top:10px;right:14px;font-family:'IBM Plex Mono',monospace;font-size:.8rem;color:var(--green);font-weight:700}
+.doodle-ov{position:absolute;inset:0;background:rgba(5,6,10,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px}
+.doodle-ov .dov-title{font-weight:800;font-size:1.1rem;color:var(--txt3);margin-bottom:6px}
+.doodle-ov .dov-sub{font-size:.8rem;color:var(--txt2);margin-bottom:16px;text-align:center;padding:0 20px;line-height:1.5}
+.doodle-ov .dov-btn{font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:600;background:transparent;color:var(--green);border:1.5px solid var(--green);padding:10px 28px;border-radius:9px;cursor:pointer;transition:.3s}
+.doodle-ov .dov-btn:hover{background:var(--green-g);box-shadow:0 0 16px rgba(0,226,160,.15)}
+.doodle-end{text-align:center;animation:fadeUp .3s ease}
+.doodle-end .de-score{font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:800;color:var(--accent);margin-bottom:6px}
+.doodle-end .de-sub{font-size:.85rem;color:var(--txt2);margin-bottom:14px}
+
+/* =================== PARTICLES =================== */
+.particle{position:fixed;pointer-events:none;z-index:60;border-radius:50%}
+@keyframes particleUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(0)}}
+
+/* =================== FINALE =================== */
+.finale{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;animation:fadeUp .8s ease}
+.fin-terminal{background:var(--card);border:1px solid var(--brd);border-radius:14px;max-width:600px;width:100%;text-align:left;position:relative;overflow:hidden;animation:fadeUp .6s ease .1s both}
+.fin-terminal .ft-bar{height:36px;background:var(--bg2);border-bottom:1px solid var(--brd);border-radius:14px 14px 0 0;display:flex;align-items:center;padding:0 14px;gap:6px}
+.fin-terminal .ft-bar span{width:10px;height:10px;border-radius:50%}
+.fin-terminal .ft-bar span:nth-child(1){background:#ff5f57}
+.fin-terminal .ft-bar span:nth-child(2){background:#febc2e}
+.fin-terminal .ft-bar span:nth-child(3){background:#28c840}
+.fin-terminal .ft-bar-title{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--txt2)}
+.fin-terminal .ft-body{padding:24px 28px 28px;font-family:'IBM Plex Mono',monospace;font-size:.8rem;line-height:2}
+.ft-line{opacity:0;animation:fadeUp .3s ease forwards}
+.ft-divider{color:var(--brd2);letter-spacing:1px}
+.ft-big{font-size:1.05rem;font-weight:700}
+.ft-huge{font-size:1.6rem;font-weight:800;letter-spacing:6px;text-shadow:0 0 24px var(--gold-g),0 0 48px rgba(255,201,64,.06)}
+.ft-stat-row{display:flex;gap:20px;flex-wrap:wrap;margin:4px 0}
+.ft-stat-item{color:var(--txt2)}
+.ft-stat-item b{color:var(--accent);font-weight:700}
+.fin-terminal{box-shadow:0 8px 60px rgba(0,0,0,.5),0 0 100px var(--accent-g)}
+@media(max-width:600px){.fin-terminal{margin:0 4px}.ft-body{padding:18px 14px!important;font-size:.72rem!important}.ft-huge{font-size:1.2rem;letter-spacing:4px}}
+
+/* Confetti */
+.conf{position:fixed;top:-20px;z-index:100;pointer-events:none;animation:confDrop linear forwards}
+@keyframes confDrop{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+.hidden{display:none!important}
+
+@media(max-width:600px){
+  .c{width:36px;height:36px;font-size:.82rem}
+  .s-let{width:36px;height:44px;font-size:1rem}
+  .cw-panel{padding:14px}
+  .modal{margin:10px;max-height:95vh}
+  .modal-body{padding:16px 18px 20px}
+  .g-layout{grid-template-columns:1fr}
+  .welcome .terminal-block{padding:20px;margin:0 8px 24px}
+}
+</style>
+</head>
+<body>
+<div class="gridbg"></div>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="app" id="app">
+  <div class="welcome" id="welcomeScreen">
+    <div class="terminal-block">
+      <div class="terminal-dots"><span></span><span></span><span></span></div>
+      <div class="terminal-title">review-quest.sh</div>
+      <div class="terminal-body" id="terminalBody"></div>
+    </div>
+    <h1>Performance <em>Review</em></h1>
+    <p class="w-sub">Діма, тебе чекає review. Пройди 6 задач — отримай найвищу оцінку.</p>
+    <button class="w-btn" id="startBtn" onclick="startGame()" style="opacity:0;pointer-events:none">./start_review.sh →</button>
+  </div>
+
+  <div class="hidden" id="gameScreen">
+    <div class="g-top">
+      <div class="review-progress">
+        <div class="rp-header">
+          <span class="rp-title">Review Progress</span>
+          <span class="rp-count" id="rpCount">0 / 6</span>
+        </div>
+        <div class="rp-bar"><div class="rp-fill" id="rpFill" style="width:0%"></div></div>
+        <div class="rp-labels"><span>Junior</span><span>Middle</span><span>Senior</span><span>Lead</span></div>
+      </div>
+      <div class="s-bar">
+        <div class="s-lbl">Секретне слово</div>
+        <div class="s-letters" id="secretBar"></div>
+      </div>
+    </div>
+    <div class="g-layout">
+      <div class="cw-panel">
+        <div class="cw-title"><span>Crossword Grid</span></div>
+        <div class="cw-grid" id="cwGrid"></div>
+      </div>
+      <div class="t-panel" id="tPanel"></div>
+    </div>
+  </div>
+
+  <div class="hidden" id="finaleScreen"></div>
+</div>
+<div id="modalRoot"></div>
+
+<script>
+// ===== TERMINAL TYPING =====
+const termLines=[
+  {type:'cmd',text:'$ ssh dima@review-server'},
+  {type:'out',text:'Connected to performance-review-2026'},
+  {type:'cmd',text:'$ cat assignment.txt'},
+  {type:'out',text:'═══════════════════════════════════════'},
+  {type:'highlight',text:'  PERFORMANCE REVIEW: 6 задач з Python'},
+  {type:'highlight',text:'  Розв\'яжи все → отримай секретне слово'},
+  {type:'highlight',text:'  Після 3-х задач — перерва 🎮'},
+  {type:'out',text:'═══════════════════════════════════════'},
+  {type:'cmd',text:'$ echo "Готовий, Діма?"'},
+];
+
+let lineIdx=0,charIdx=0;
+function typeTerminal(){
+  const body=document.getElementById('terminalBody');
+  if(lineIdx>=termLines.length){
+    // Show cursor and start button
+    const cursor=document.createElement('span');cursor.className='t-cursor';
+    body.lastChild.appendChild(cursor);
+    const btn=document.getElementById('startBtn');
+    btn.style.opacity='1';btn.style.pointerEvents='auto';
+    btn.style.animation='fadeUp .5s ease both';
+    return;
+  }
+  const line=termLines[lineIdx];
+  if(charIdx===0){
+    const el=document.createElement('div');
+    el.className='terminal-line';
+    el.style.animationDelay='0s';
+    if(line.type==='cmd')el.innerHTML='<span class="t-prompt">❯ </span><span class="t-cmd"></span>';
+    else if(line.type==='highlight')el.innerHTML='<span class="t-highlight"></span>';
+    else el.innerHTML='<span class="t-out"></span>';
+    body.appendChild(el);
+  }
+  const el=body.lastChild;
+  const span=el.querySelector('.t-cmd,.t-out,.t-highlight');
+  if(charIdx<line.text.length){
+    span.textContent=line.text.substring(0,charIdx+1);
+    charIdx++;
+    const speed=line.type==='cmd'?35:15;
+    setTimeout(typeTerminal,speed);
+  }else{
+    charIdx=0;lineIdx++;
+    setTimeout(typeTerminal,line.type==='cmd'?400:150);
+  }
+}
+setTimeout(typeTerminal,600);
+
+// ===== DATA =====
+const COLS=7,ROWS=11,SECRET="REVIEW";
+const words=[
+  {id:0,num:1,answer:"TRAIN",dir:"across",sr:0,sc:1,goldIdx:1,secIdx:0,
+    title:"Рекурсія та факторіал",
+    question:"Ця функція завжди повертає одне й те саме значення, незалежно від вхідних даних. Яке число вона поверне?",
+    code:'<span class="kw">def</span> <span class="fn">mystery</span>(data):\n    result = <span class="num">0</span>\n    <span class="kw">for</span> i <span class="kw">in</span> range(len(data)):\n        result += data[i] * (-<span class="num">1</span>) ** i\n    result = abs(result)\n    result = result - result\n    result = result + <span class="num">42</span>\n    <span class="kw">return</span> result // <span class="num">6</span>\n\n<span class="cm"># Що поверне mystery([100, 200, 300])?</span>',
+    taskAnswer:["7"],hint:"result - result = 0. Далі 0 + 42 = 42, і 42 // 6 = ?"},
+  {id:1,num:2,answer:"MODEL",dir:"across",sr:2,sc:0,goldIdx:3,secIdx:1,
+    title:"Декоратори та класи",
+    question:"Що виведе print? Відповідь — одне число.",
+    code:'<span class="kw">def</span> <span class="fn">decorator</span>(func):\n    <span class="kw">def</span> <span class="fn">wrapper</span>(*args):\n        <span class="kw">return</span> func(*args) * <span class="num">2</span>\n    <span class="kw">return</span> wrapper\n\n<span class="kw">class</span> <span class="fn">Bot</span>:\n    <span class="kw">def</span> <span class="fn">__init__</span>(self, name):\n        self.name = name\n\n    @decorator\n    <span class="kw">def</span> <span class="fn">greet</span>(self):\n        <span class="kw">return</span> len(self.name)\n\nb = Bot(<span class="str">"Dima"</span>)\nprint(b.greet())',
+    taskAnswer:["8"],hint:'"Dima" = 4 символи. Декоратор × 2 → 4 × 2 = ?'},
+  {id:2,num:3,answer:"SERVER",dir:"across",sr:4,sc:0,goldIdx:3,secIdx:2,
+    title:"List Comprehension",
+    question:"Скільки елементів буде у списку result?",
+    code:'data = list(range(<span class="num">1</span>, <span class="num">21</span>))  <span class="cm"># [1..20]</span>\n\nresult = [\n    x ** <span class="num">2</span>\n    <span class="kw">for</span> x <span class="kw">in</span> data\n    <span class="kw">if</span> x % <span class="num">2</span> == <span class="num">0</span>      <span class="cm"># парні</span>\n    <span class="kw">if</span> x % <span class="num">3</span> != <span class="num">0</span>      <span class="cm"># не кратні 3</span>\n    <span class="kw">if</span> x > <span class="num">4</span>            <span class="cm"># більше 4</span>\n]\n\nprint(len(result))',
+    taskAnswer:["5"],hint:"Парні: 2,4,6,8,10,12,14,16,18,20. Без кратних 3: 2,4,8,10,14,16,20. Більше 4: 8,10,14,16,20."},
+  {id:3,num:4,answer:"STRING",dir:"across",sr:6,sc:0,goldIdx:3,secIdx:3,
+    title:"Композиція функцій",
+    question:"Що виведе print? Відповідь — одне число.",
+    code:'<span class="kw">def</span> <span class="fn">compose</span>(*funcs):\n    <span class="kw">def</span> <span class="fn">inner</span>(x):\n        <span class="kw">for</span> f <span class="kw">in</span> reversed(funcs):\n            x = f(x)\n        <span class="kw">return</span> x\n    <span class="kw">return</span> inner\n\nadd3 = <span class="kw">lambda</span> x: x + <span class="num">3</span>\nmul2 = <span class="kw">lambda</span> x: x * <span class="num">2</span>\nsub1 = <span class="kw">lambda</span> x: x - <span class="num">1</span>\n\npipeline = compose(sub1, mul2, add3)\nprint(pipeline(<span class="num">4</span>))',
+    taskAnswer:["13"],hint:"reversed → add3, mul2, sub1. 4+3=7 → 7×2=14 → 14-1=?"},
+  {id:4,num:5,answer:"VALUE",dir:"across",sr:8,sc:0,goldIdx:4,secIdx:4,
+    title:"Генератори",
+    question:"Яке фінальне значення total?",
+    code:'<span class="kw">def</span> <span class="fn">fib_gen</span>(n):\n    a, b = <span class="num">0</span>, <span class="num">1</span>\n    <span class="kw">for</span> _ <span class="kw">in</span> range(n):\n        <span class="kw">yield</span> a\n        a, b = b, a + b\n\ntotal = <span class="num">0</span>\n<span class="kw">for</span> val <span class="kw">in</span> fib_gen(<span class="num">7</span>):\n    <span class="kw">if</span> val % <span class="num">2</span> == <span class="num">0</span>:\n        total += val\n\nprint(total)',
+    taskAnswer:["10"],hint:"fib_gen(7): 0,1,1,2,3,5,8. Парні: 0,2,8. Сума: 0+2+8=?"},
+  {id:5,num:6,answer:"FLOW",dir:"across",sr:10,sc:1,goldIdx:3,secIdx:5,
+    title:"Словники та множини",
+    question:"Що виведе print? Відповідь — одне число.",
+    code:'<span class="kw">def</span> <span class="fn">count_unique</span>(items):\n    seen = set()\n    dupes = set()\n    <span class="kw">for</span> item <span class="kw">in</span> items:\n        <span class="kw">if</span> item <span class="kw">in</span> seen:\n            dupes.add(item)\n        seen.add(item)\n    <span class="kw">return</span> len(seen) - len(dupes)\n\ndata = [<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">2</span>,<span class="num">4</span>,<span class="num">3</span>,<span class="num">5</span>,<span class="num">1</span>,<span class="num">6</span>,<span class="num">7</span>,<span class="num">5</span>]\nprint(count_unique(data))',
+    taskAnswer:["3"],hint:"seen={1,2,3,4,5,6,7}→7. dupes={1,2,3,5}→4. 7-4=?"}
+];
+
+let solvedTasks=new Set(),startTime=0,attempts=0,doodlePlayed=false;
+const gridCells={};
+
+// ===== GRID =====
+function buildGrid(){
+  const g=document.getElementById('cwGrid');
+  g.style.gridTemplateColumns=`repeat(${COLS}, 44px)`;g.innerHTML='';
+  const occ={};
+  words.forEach(w=>{for(let i=0;i<w.answer.length;i++){const r=w.sr,c=w.sc+i,k=`${r}-${c}`;if(!occ[k])occ[k]={letter:w.answer[i],gold:false,num:null};if(i===w.goldIdx)occ[k].gold=true;if(i===0)occ[k].num=w.num;}});
+  for(let r=0;r<ROWS;r++){for(let c=0;c<COLS;c++){const cell=document.createElement('div');const k=`${r}-${c}`,d=occ[k];
+    if(!d){cell.className='c e';}else{cell.className='c a'+(d.gold?' gld':'');if(d.num){const n=document.createElement('span');n.className='cn';n.textContent=d.num;cell.appendChild(n);}const ltr=document.createElement('span');ltr.className='letter';ltr.textContent=d.letter;cell.appendChild(ltr);gridCells[k]={el:cell,letterEl:ltr,letter:d.letter,gold:d.gold};}
+    g.appendChild(cell);}}
+}
+
+function animateWordFill(wid,onDone){
+  const w=words[wid],cells=[];
+  for(let i=0;i<w.answer.length;i++)cells.push(gridCells[`${w.sr}-${w.sc+i}`]);
+  cells.forEach((c,i)=>{setTimeout(()=>{c.el.classList.add('filled');spawnParticles(c.el);if(c.gold)revealSecret(w.secIdx,SECRET[w.secIdx]);if(i===cells.length-1&&onDone)setTimeout(onDone,500);},i*170);});
+}
+
+function spawnParticles(el){
+  const rect=el.getBoundingClientRect();const colors=['#00e2a0','#4d8eff','#ffc940'];
+  for(let i=0;i<5;i++){const p=document.createElement('div');p.className='particle';
+    p.style.left=(rect.left+rect.width/2+Math.random()*20-10)+'px';
+    p.style.top=(rect.top+rect.height/2)+'px';
+    p.style.width=p.style.height=(Math.random()*4+2)+'px';
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.animation=`particleUp ${.5+Math.random()*.5}s ease forwards`;
+    document.body.appendChild(p);setTimeout(()=>p.remove(),1200);}
+}
+
+function hlWord(wid){document.querySelectorAll('.c.hl').forEach(el=>el.classList.remove('hl'));const w=words[wid];for(let i=0;i<w.answer.length;i++){const idx=w.sr*COLS+(w.sc+i);const el=document.querySelectorAll('#cwGrid .c')[idx];if(el&&!el.classList.contains('e'))el.classList.add('hl');}}
+
+// ===== SECRET & PROGRESS =====
+function buildSecretBar(){const bar=document.getElementById('secretBar');bar.innerHTML='';for(let i=0;i<SECRET.length;i++){const el=document.createElement('div');el.className='s-let';el.id=`sec-${i}`;el.textContent='?';bar.appendChild(el);}}
+function revealSecret(idx,l){const el=document.getElementById(`sec-${idx}`);if(el&&!el.classList.contains('on')){el.textContent=l;el.classList.add('on');}}
+function updateProgress(){const n=solvedTasks.size;document.getElementById('rpCount').textContent=`${n} / 6`;document.getElementById('rpFill').style.width=`${(n/6)*100}%`;}
+
+// ===== TASKS =====
+function buildTasks(){
+  const panel=document.getElementById('tPanel');panel.innerHTML='';
+  for(let i=0;i<3;i++)panel.appendChild(makeTaskCard(words[i]));
+  panel.appendChild(makeDoodleCard());
+  for(let i=3;i<6;i++)panel.appendChild(makeTaskCard(words[i]));
+  updateProgress();
+}
+
+function makeTaskCard(w){
+  const card=document.createElement('div');const done=solvedTasks.has(w.id);
+  const needDoodle=w.id>=3&&!doodlePlayed;const needPrev=w.id>=3&&solvedTasks.size<3;const locked=!done&&(needDoodle||needPrev);
+  card.className='t-card'+(done?' done':'')+(locked?' locked':'');
+  const icon=done?'✅':locked?'🔒':'💻';const extra=done?`<span class="t-rw-mini">${w.answer}</span>`:'';
+  card.innerHTML=`<div class="t-hdr"><div class="t-n">${w.num}</div><div class="t-nm">${w.title}</div>${extra}<div class="t-meta"><div class="t-dir">${w.answer.length} літер</div><div class="t-st">${icon}</div></div></div>`;
+  if(!done&&!locked)card.addEventListener('click',()=>openModal(w.id));
+  return card;
+}
+
+function makeDoodleCard(){
+  const card=document.createElement('div');const allDone=[0,1,2].every(i=>solvedTasks.has(i));const locked=!allDone;
+  card.className='doodle-card'+(doodlePlayed?' played':'')+(locked&&!doodlePlayed?' locked':'');
+  const icon=doodlePlayed?'✅':locked?'🔒':'🎮';
+  card.innerHTML=`<div class="t-hdr"><div class="t-n">☕</div><div class="t-nm">${doodlePlayed?'Перерва завершена!':'Перерва — Doodle Jump!'}</div><div class="t-meta"><div class="t-dir">міні-гра</div><div class="t-st">${icon}</div></div></div>`;
+  if(!doodlePlayed&&!locked)card.addEventListener('click',()=>openDoodleModal());
+  return card;
+}
+
+// ===== TASK MODAL =====
+function openModal(id){if(solvedTasks.has(id))return;const w=words[id];hlWord(id);
+  document.getElementById('modalRoot').innerHTML=`
+    <div class="modal-overlay" onclick="modalBg(event)"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-top"><div class="modal-badge"><div class="m-num">${w.num}</div><div class="m-title">${w.title}</div></div><button class="modal-close" onclick="closeModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="m-q">${w.question}</div><div class="m-code">${w.code}</div>
+        <div class="m-ans-row"><input type="text" class="m-inp" id="mi-${id}" placeholder="Відповідь..." onkeydown="if(event.key==='Enter')submitTask(${id})"><button class="m-sub" onclick="submitTask(${id})">→</button></div>
+        <button class="m-hint-btn" id="mhb-${id}" onclick="showHint(${id})">💡 підказка</button><div id="mf-${id}"></div>
+      </div></div></div>`;
+  document.body.style.overflow='hidden';setTimeout(()=>{const inp=document.getElementById(`mi-${id}`);if(inp)inp.focus();},150);
+}
+
+function submitTask(id){const w=words[id],inp=document.getElementById(`mi-${id}`),fb=document.getElementById(`mf-${id}`);attempts++;
+  if(w.taskAnswer.includes(inp.value.trim())){solvedTasks.add(id);
+    fb.innerHTML=`<div class="m-success"><div class="ms-icon">🎉</div><div class="ms-text">Правильно!</div><div class="ms-sub">Слово з'явиться у кросворді</div></div><button class="m-close-btn" onclick="closeAndFill(${id})">Повернутись →</button>`;
+    inp.closest('.m-ans-row').style.display='none';const hb=document.getElementById(`mhb-${id}`);if(hb)hb.remove();const ht=fb.parentNode.querySelector('.m-hint');if(ht)ht.remove();updateProgress();
+  }else{fb.innerHTML=`<div class="m-fb no">❌ Неправильно. Спробуй ще!</div>`;inp.style.borderColor='var(--red)';setTimeout(()=>{inp.style.borderColor='var(--brd)';fb.innerHTML='';},2500);}}
+
+function closeAndFill(id){closeModal();buildTasks();setTimeout(()=>{animateWordFill(id,()=>{if(solvedTasks.size===6)setTimeout(showFinale,800);});},300);}
+function showHint(id){const w=words[id],btn=document.getElementById(`mhb-${id}`);if(!btn)return;const h=document.createElement('div');h.className='m-hint';h.textContent='💡 '+w.hint;btn.replaceWith(h);}
+function closeModal(){document.getElementById('modalRoot').innerHTML='';document.body.style.overflow='';document.querySelectorAll('.c.hl').forEach(el=>el.classList.remove('hl'));}
+function modalBg(e){if(e.target.classList.contains('modal-overlay'))closeModal();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// ===== DOODLE JUMP =====
+let doodleRAF=null;
+function openDoodleModal(){
+  document.getElementById('modalRoot').innerHTML=`
+    <div class="modal-overlay" onclick="modalBg(event)"><div class="modal doodle-modal" onclick="event.stopPropagation()">
+      <div class="modal-top"><div class="modal-badge"><div class="m-num">☕</div><div class="m-title">Перерва!</div></div><button class="modal-close" onclick="closeDoodleModal()">✕</button></div>
+      <div class="modal-body"><div class="m-q">Ти заслужив відпочинок! Пограй трохи 🎮</div>
+        <div class="doodle-wrap" id="doodleWrap"><canvas id="doodleCanvas" width="360" height="480"></canvas><div class="doodle-sc" id="doodleSc">0</div>
+          <div class="doodle-ov" id="doodleOv"><div class="dov-title">🎮 Doodle Jump</div><div class="dov-sub">← → або A/D щоб рухатись<br>Стрибай якомога вище!</div><button class="dov-btn" onclick="startDoodle()">Грати</button></div>
+        </div><div id="doodleEnd"></div></div></div></div>`;
+  document.body.style.overflow='hidden';
+}
+
+function closeDoodleModal(){if(doodleRAF)cancelAnimationFrame(doodleRAF);closeModal();}
+
+function startDoodle(){
+  document.getElementById('doodleOv').style.display='none';
+  const canvas=document.getElementById('doodleCanvas'),ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
+  let player={x:W/2-15,y:H-60,w:28,h:28,vy:0,vx:0};
+  let platforms=[],score=0,gameOver=false,keys={left:false,right:false},touchX=null;
+  const colors=['#00e2a0','#4d8eff','#ffc940','#00d4ff'];
+  for(let i=0;i<8;i++)platforms.push({x:Math.random()*(W-55),y:H-i*62,w:55,h:8,color:colors[i%colors.length]});
+  platforms[0].x=player.x-12;platforms[0].y=H-30;player.vy=-9;
+
+  function kd(e){if(e.key==='ArrowLeft'||e.key==='a')keys.left=true;if(e.key==='ArrowRight'||e.key==='d')keys.right=true;}
+  function ku(e){if(e.key==='ArrowLeft'||e.key==='a')keys.left=false;if(e.key==='ArrowRight'||e.key==='d')keys.right=false;}
+  function ts(e){touchX=e.touches[0].clientX;}
+  function tm(e){if(touchX===null)return;const dx=e.touches[0].clientX-touchX;keys.left=dx<-10;keys.right=dx>10;}
+  function te(){keys.left=false;keys.right=false;touchX=null;}
+  document.addEventListener('keydown',kd);document.addEventListener('keyup',ku);
+  canvas.addEventListener('touchstart',ts);canvas.addEventListener('touchmove',tm);canvas.addEventListener('touchend',te);
+
+  function update(){if(gameOver)return;
+    if(keys.left)player.vx=-5.5;else if(keys.right)player.vx=5.5;else player.vx*=0.82;
+    player.x+=player.vx;player.vy+=0.34;player.y+=player.vy;
+    if(player.x<-player.w)player.x=W;if(player.x>W)player.x=-player.w;
+    if(player.y<H/2){const d=H/2-player.y;player.y=H/2;platforms.forEach(p=>p.y+=d);score+=Math.floor(d);}
+    if(player.vy>0){platforms.forEach(p=>{if(player.x+player.w>p.x&&player.x<p.x+p.w&&player.y+player.h>=p.y&&player.y+player.h<=p.y+p.h+10)player.vy=-10;});}
+    platforms=platforms.filter(p=>p.y<H+20);
+    while(platforms.length<8){const topY=Math.min(...platforms.map(p=>p.y));platforms.push({x:Math.random()*(W-55),y:topY-52-Math.random()*30,w:55,h:8,color:colors[Math.floor(Math.random()*colors.length)]});}
+    if(player.y>H+50){gameOver=true;document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);canvas.removeEventListener('touchstart',ts);canvas.removeEventListener('touchmove',tm);canvas.removeEventListener('touchend',te);showDoodleEnd(score);return;}
+    document.getElementById('doodleSc').textContent=Math.floor(score/10);
+  }
+
+  function draw(){
+    ctx.fillStyle='#05060a';ctx.fillRect(0,0,W,H);
+    // Stars
+    for(let i=0;i<20;i++){ctx.fillStyle=`rgba(255,255,255,${.05+Math.random()*.05})`;ctx.fillRect(((i*137)%W),((i*97+score*.02)%H),1,1);}
+    // Platforms
+    platforms.forEach(p=>{ctx.fillStyle=p.color;ctx.globalAlpha=.8;ctx.beginPath();ctx.roundRect(p.x,p.y,p.w,p.h,4);ctx.fill();ctx.globalAlpha=.15;ctx.shadowColor=p.color;ctx.shadowBlur=12;ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;});
+    // Player
+    const px=player.x,py=player.y,pw=player.w;
+    ctx.fillStyle='#4d8eff';ctx.beginPath();ctx.roundRect(px,py,pw,player.h,7);ctx.fill();
+    ctx.shadowColor='#4d8eff';ctx.shadowBlur=15;ctx.fill();ctx.shadowBlur=0;
+    // Eyes
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(px+9,py+12,3.5,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(px+19,py+12,3.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#0a0c14';ctx.beginPath();ctx.arc(px+9,py+12,1.8,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(px+19,py+12,1.8,0,Math.PI*2);ctx.fill();
+  }
+
+  function loop(){update();draw();if(!gameOver)doodleRAF=requestAnimationFrame(loop);}
+  loop();
+}
+
+function showDoodleEnd(score){document.getElementById('doodleEnd').innerHTML=`<div class="doodle-end"><div class="de-score">Score: ${Math.floor(score/10)}</div><div class="de-sub">Час повертатись до review 😄</div><button class="m-close-btn" onclick="finishDoodle()">Продовжити →</button></div>`;}
+function finishDoodle(){doodlePlayed=true;if(doodleRAF)cancelAnimationFrame(doodleRAF);closeModal();buildTasks();}
+
+// ===== GAME =====
+function startGame(){startTime=Date.now();document.getElementById('welcomeScreen').classList.add('hidden');document.getElementById('gameScreen').classList.remove('hidden');document.getElementById('gameScreen').style.animation='fadeUp .5s ease';buildSecretBar();buildGrid();buildTasks();}
+
+function showFinale(){
+  document.getElementById('gameScreen').classList.add('hidden');const fin=document.getElementById('finaleScreen');fin.classList.remove('hidden');
+  const el=Math.floor((Date.now()-startTime)/1000),m=Math.floor(el/60),s=el%60;
+  
+  const finLines=[
+    {cls:'t-prompt',text:'❯ ./check_review.sh'},
+    {cls:'ft-divider',text:'════════════════════════════════════════'},
+    {cls:'',text:''},
+    {cls:'t-highlight ft-big',text:'  🎉 PERFORMANCE REVIEW: PASSED! 🎉'},
+    {cls:'',text:''},
+    {cls:'ft-divider',text:'════════════════════════════════════════'},
+    {cls:'t-out',text:'  Іван дуже пишається тобою!'},
+    {cls:'t-out',text:'  Ти подолав усі випробування і довів'},
+    {cls:'t-out',text:'  що ти справжній ML-інженер! 🦸‍♂️'},
+    {cls:'',text:''},
+    {cls:'t-prompt',text:'❯ cat stats.json'},
+    {cls:'t-accent',text:`  tasks: 6/6  |  attempts: ${attempts}  |  time: ${m}:${s.toString().padStart(2,'0')}`},
+    {cls:'',text:''},
+    {cls:'t-prompt',text:'❯ cat gift_instructions.txt'},
+    {cls:'ft-divider',text:'────────────────────────────────────────'},
+    {cls:'t-highlight',text:'  🎁 Щоб отримати подарунок:'},
+    {cls:'t-out',text:'  Напиши Івану секретне слово з кросворда:'},
+    {cls:'',text:''},
+    {cls:'t-highlight ft-huge',text:'  ➜  REVIEW'},
+    {cls:'',text:''},
+    {cls:'t-out',text:'  Після цього — подарунок твій!'},
+    {cls:'t-out',text:'  Насолоджуйся! 🎁'},
+    {cls:'ft-divider',text:'────────────────────────────────────────'},
+    {cls:'t-prompt',text:'❯ echo "З Днем Народження, Діма!"'},
+    {cls:'t-highlight ft-big',text:'  🎂 З Днем Народження, Діма! 🎂'},
+  ];
+
+  fin.innerHTML=`<div class="finale">
+    <div class="fin-terminal">
+      <div class="ft-bar"><span></span><span></span><span></span><div class="ft-bar-title">review-result.sh</div></div>
+      <div class="ft-body" id="finTermBody"></div>
+    </div>
+  </div>`;
+
+  const body=document.getElementById('finTermBody');
+  let lineI=0;
+  function typeFinale(){
+    if(lineI>=finLines.length){
+      const cursor=document.createElement('span');cursor.className='t-cursor';body.lastChild.appendChild(cursor);
+      return;
+    }
+    const line=finLines[lineI];
+    const div=document.createElement('div');
+    div.className='ft-line';
+    div.style.animationDelay='0s';
+    div.innerHTML=`<span class="${line.cls}">${line.text||'&nbsp;'}</span>`;
+    body.appendChild(div);
+    lineI++;
+    const delay=line.cls.includes('t-prompt')?400:line.cls.includes('ft-divider')?150:line.text===''?100:180;
+    setTimeout(typeFinale,delay);
+  }
+  setTimeout(typeFinale,500);
+  launchConfetti();
+}
+
+function launchConfetti(){const cols=['#4d8eff','#00e2a0','#ff5c5c','#ffc940','#b8a0d6','#00d4ff'];for(let i=0;i<150;i++){setTimeout(()=>{const p=document.createElement('div');p.className='conf';p.style.left=Math.random()*100+'vw';p.style.background=cols[Math.floor(Math.random()*cols.length)];p.style.width=(Math.random()*9+4)+'px';p.style.height=(Math.random()*9+4)+'px';p.style.borderRadius=Math.random()>.5?'50%':'2px';p.style.animationDuration=(Math.random()*2.5+2)+'s';document.body.appendChild(p);setTimeout(()=>p.remove(),5000);},i*20);}}
+</script>
+</body>
+</html>
